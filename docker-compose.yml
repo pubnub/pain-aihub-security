@@ -5,12 +5,17 @@ services:
     container_name: security_the_toolbox
     volumes:
       - ./security_the_toolbox:/usr/src/app
+      - security_the_toolbox_volumen:/usr/src/app/node_modules
     ports:
       - "5000:5000"
     environment:
       - NODE_ENV=production
     networks:
       - security_network
+
+volumes:
+  security_the_toolbox_volumen:
+    driver: local
 
 networks:
   security_network:
