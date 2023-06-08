@@ -23,11 +23,11 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 passport.use('local', new LocalStrategy({
-  usernameField: 'username',
+  usernameField: 'email',
   passwordField: 'password',
-}, async (username, password, done) => {
+}, async (email, password, done) => {
   const db = await getDb();
-  const user = await db.collection('users').findOne({ username: username });
+  const user = await db.collection('users').findOne({ email: email });
 
   if (!user) {
     return done(null, false, { message: 'No user found.' });
@@ -40,6 +40,7 @@ passport.use('local', new LocalStrategy({
 
   return done(null, user);
 }));
+
 
 passport.serializeUser(function(user, done) {
   done(null, user._id);
@@ -62,12 +63,52 @@ app.get('/', (req, res) => {
   res.send('Home page. Please <a href="/login">log in</a>.');
 });
 
+app.get('/signup', (req, res) => {
+  res.send(`
+    <form action="/signup" method="post">
+      <div>
+        <label>Username:</label>
+        <input type="text" name="username"/>
+      </div>
+      <div>
+        <label>Email:</label>
+        <input type="email" name="email"/>
+      </div>
+      <div>
+        <label>Password:</label>
+        <input type="password" name="password"/>
+      </div>
+      <div>
+        <input type="submit" value="Sign Up"/>
+      </div>
+    </form>
+  `);
+});
+
+app.post('/signup', async (req, res) => {
+  try {
+    const hashedPassword = await bcrypt.hash(req.body.password, 10);
+    const user = { 
+      email: req.body.email, 
+      password: hashedPassword, 
+      created_at: new Date(), 
+      updated_at: new Date() 
+    };
+    const db = await getDb();
+    await db.collection('users').insertOne(user);
+    res.redirect('/login');
+  } catch {
+    res.redirect('/signup');
+  }
+});
+
+
 app.get('/login', (req, res) => {
   res.send(`
     <form action="/login" method="post">
       <div>
-        <label>Username:</label>
-        <input type="text" name="username"/>
+        <label>Email:</label>
+        <input type="text" name="email"/>
       </div>
       <div>
         <label>Password:</label>
@@ -84,33 +125,22 @@ app.post('/login', passport.authenticate('local', { failureRedirect: '/login' })
   res.redirect('/secret');
 });
 
-app.get('/signup', (req, res) => {
-  res.send(`
-    <form action="/signup" method="post">
-      <div>
-        <label>Username:</label>
-        <input type="text" name="username"/>
-      </div>
-      <div>
-        <label>Password:</label>
-        <input type="password" name="password"/>
-      </div>
-      <div>
-        <input type="submit" value="Sign Up"/>
-      </div>
-    </form>
-  `);
-});
-
-app.post('/signup', async (req, res) => {
+app.post('/update_password', ensureAuthenticated, async (req, res) => {
   try {
-    const hashedPassword = await bcrypt.hash(req.body.password, 10);
-    const user = { username: req.body.username, password: hashedPassword };
+    const hashedPassword = await bcrypt.hash(req.body.new_password, 10);
     const db = await getDb();
-    await db.collection('users').insertOne(user);
-    res.redirect('/login');
+    await db.collection('users').updateOne(
+      { _id: new ObjectId(req.user._id) },
+      { 
+        $set: { 
+          password: hashedPassword, 
+          updated_at: new Date() 
+        }
+      }
+    );
+    res.redirect('/profile');
   } catch {
-    res.redirect('/signup');
+    res.redirect('/change_password');
   }
 });
 
