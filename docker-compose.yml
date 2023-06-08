@@ -5,18 +5,49 @@ services:
     container_name: security_the_toolbox
     volumes:
       - ./security_the_toolbox:/usr/src/app
-      - security_the_toolbox_volumen:/usr/src/app/node_modules
     ports:
       - "5000:5000"
     environment:
       - NODE_ENV=production
     networks:
       - security_network
+  security_pasport:
+    build: ./security_passport
+    container_name: security_passport
+    volumes:
+      - ./security_passport:/usr/src/app
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - security_network
+      - database_network
+  database_mongo_2:
+    build: ./database_mongo_2
+    container_name: database_mongo_2
+    ports:
+      - "27017:27017"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mongo.rule=Host(`database_mongo_2.localhost`)"
+      - "traefik.http.routers.mongo.entrypoints=web"
+      - "traefik.http.routers.mongo.service=mongo-srv"
+      - "traefik.http.services.mongo-srv.loadbalancer.server.port=27018"
+    volumes:
+      - database_mongo_2_volume:/data/db
+    networks:
+      - database_network
 
 volumes:
+  database_mongo_2_volume:
+    driver: local
   security_the_toolbox_volumen:
     driver: local
 
 networks:
   security_network:
+    driver: bridge
+  database_network:
+    name: database_network
     driver: bridge
