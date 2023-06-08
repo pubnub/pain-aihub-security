@@ -1,0 +1,177 @@
+openapi: "3.0.0"
+info:
+  version: "1.0.0"
+  title: "Authentication API"
+servers:
+  - url: "http://localhost:5001"
+paths:
+  /:
+    get:
+      summary: "Home page"
+      responses:
+        '200':
+          description: "OK"
+
+  /signup:
+    get:
+      summary: "Signup page"
+      responses:
+        '200':
+          description: "OK"
+    post:
+      summary: "Create a new user"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: "object"
+              properties:
+                email:
+                  type: "string"
+                password:
+                  type: "string"
+      responses:
+        '302':
+          description: "Redirected to /login on success"
+
+  /login:
+    get:
+      summary: "Login page"
+      responses:
+        '200':
+          description: "OK"
+    post:
+      summary: "User login"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: "object"
+              properties:
+                email:
+                  type: "string"
+                password:
+                  type: "string"
+      responses:
+        '302':
+          description: "Redirected to /secret on success"
+
+  /update_password:
+    post:
+      summary: "Update user password"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: "object"
+              properties:
+                new_password:
+                  type: "string"
+      responses:
+        '302':
+          description: "Redirected to /profile on success"
+
+  /secret:
+    get:
+      summary: "Secret page"
+      responses:
+        '200':
+          description: "OK"
+
+  /logout:
+    get:
+      summary: "Logout user"
+      responses:
+        '302':
+          description: "Redirected to / on success"
+
+  /unauthorized:
+    get:
+      summary: "Unauthorized page"
+      responses:
+        '200':
+          description: "OK"
+
+  /admin/users:
+    get:
+      summary: "Get all users as an admin"
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      summary: "Create a new user as an admin"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: "object"
+              properties:
+                email:
+                  type: "string"
+                password:
+                  type: "string"
+      responses:
+        '302':
+          description: "Redirected to /admin/users on success"
+
+  /admin/users/{id}:
+    put:
+      summary: "Update a user as an admin"
+      parameters:
+        - in: "path"
+          name: "id"
+          required: true
+          schema:
+            type: "string"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: "object"
+              properties:
+                email:
+                  type: "string"
+                password:
+                  type: "string"
+      responses:
+        '302':
+          description: "Redirected to /admin/users on success"
+    delete:
+      summary: "Delete a user as an admin"
+      parameters:
+        - in: "path"
+          name: "id"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        '302':
+          description: "Redirected to /admin/users on success"
+components:
+  schemas:
+    User:
+      type: "object"
+      properties:
+        _id:
+          type: "string"
+        email:
+          type: "string"
+        password:
+          type: "string"
+        created_at:
+          type: "string"
+          format: "date-time"
+        updated_at:
+          type: "string"
+          format: "date-time"

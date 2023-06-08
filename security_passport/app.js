@@ -59,6 +59,13 @@ function ensureAuthenticated(req, res, next) {
   res.redirect('/unauthorized');
 }
 
+function ensureAdmin(req, res, next) {
+  if (req.isAuthenticated() && req.user.isAdmin) {
+    return next();
+  }
+  res.redirect('/unauthorized');
+}
+
 app.get('/', (req, res) => {
   res.send('Home page. Please <a href="/login">log in</a>.');
 });
@@ -155,6 +162,44 @@ app.get('/logout', (req, res) => {
 
 app.get('/unauthorized', (req, res) => {
   res.send('You are not authorized to view this page. Please <a href="/login">log in</a>.');
+});
+
+// Admin routes
+app.get('/admin/users', ensureAuthenticated, ensureAdmin, async (req, res) => {
+  const db = await getDb();
+  const users = await db.collection('users').find({}).toArray();
+  res.json(users);
+});
+
+app.post('/admin/users', ensureAuthenticated, ensureAdmin, async (req, res) => {
+  const hashedPassword = await bcrypt.hash(req.body.password, 10);
+  const user = { 
+    email: req.body.email, 
+    password: hashedPassword, 
+    created_at: new Date(), 
+    updated_at: new Date() 
+  };
+  const db = await getDb();
+  await db.collection('users').insertOne(user);
+  res.redirect('/admin/users');
+});
+
+app.put('/admin/users/:id', ensureAuthenticated, ensureAdmin, async (req, res) => {
+  const hashedPassword = await bcrypt.hash(req.body.password, 10);
+  const user = { 
+    email: req.body.email, 
+    password: hashedPassword, 
+    updated_at: new Date() 
+  };
+  const db = await getDb();
+  await db.collection('users').updateOne({ _id: new ObjectId(req.params.id) }, { $set: user });
+  res.redirect('/admin/users');
+});
+
+app.delete('/admin/users/:id', ensureAuthenticated, ensureAdmin, async (req, res) => {
+  const db = await getDb();
+  await db.collection('users').deleteOne({ _id: new ObjectId(req.params.id) });
+  res.redirect('/admin/users');
 });
 
 app.listen(5001, () => {
